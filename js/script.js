@@ -1,17 +1,27 @@
-const keys = ['A', 'Z', 'E', 'R', 'Q', 'S', 'D', 'F'];
+const allSequences = [
+    { name: "Combo Alpha", seq: ['A', 'Z', 'E', 'R'] },
+    { name: "Combo Bravo", seq: ['Q', 'S', 'D', 'F'] },
+    { name: "Combo Charlie", seq: ['A', 'Q', 'Z', 'S'] },
+    { name: "Combo Delta", seq: ['E', 'R', 'D', 'F'] },
+    { name: "Combo Echo", seq: ['Z', 'E', 'S', 'D'] },
+    { name: "Combo Foxtrot", seq: ['Q', 'Q', 'S', 'S'] },
+    { name: "Combo Golf", seq: ['A', 'A', 'D', 'D'] },
+    { name: "Combo Hotel", seq: ['R', 'E', 'Z', 'A'] }
+];
+
 let sequence = [];
+let sequenceName = "";
 let userIndex = 0;
 let timeoutId;
 let round = 0;
 let totalRounds = 5;
 let roundDelay = 1500;
 
-function generateSequence(length = 4) {
-    const seq = [];
-    for (let i = 0; i < length; i++) {
-        seq.push(keys[Math.floor(Math.random() * keys.length)]);
-    }
-    return seq;
+function getRandomSequence() {
+    // Prend une séquence au hasard dans la liste
+    const obj = allSequences[Math.floor(Math.random() * allSequences.length)];
+    sequenceName = obj.name;
+    return obj.seq;
 }
 
 function startGame() {
@@ -20,20 +30,21 @@ function startGame() {
     nextRound();
 }
 
-
 function nextRound() {
     if (round >= totalRounds) {
         document.getElementById('result').textContent = "Partie terminée !";
         document.getElementById('qte').textContent = '';
+        document.getElementById('qte-name').textContent = '';
         return;
     }
-    sequence = generateSequence(4);
+    sequence = getRandomSequence();
     userIndex = 0;
     showSequence();
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => {
         document.getElementById('result').textContent = "Raté ! Trop lent.";
         document.getElementById('qte').textContent = '';
+        document.getElementById('qte-name').textContent = '';
         sequence = [];
         round++;
         setTimeout(nextRound, roundDelay);
@@ -41,6 +52,7 @@ function nextRound() {
 }
 
 function showSequence() {
+    document.getElementById('qte-name').textContent = sequenceName;
     document.getElementById('qte').textContent = `Appuie sur : ${sequence.join(' ')}`;
 }
 
@@ -52,6 +64,7 @@ document.addEventListener('keydown', function (e) {
             clearTimeout(timeoutId);
             document.getElementById('result').textContent = "Bravo ! Séquence réussie !";
             document.getElementById('qte').textContent = '';
+            document.getElementById('qte-name').textContent = '';
             sequence = [];
             round++;
             setTimeout(nextRound, roundDelay);
@@ -61,6 +74,7 @@ document.addEventListener('keydown', function (e) {
             clearTimeout(timeoutId);
             document.getElementById('result').textContent = "Raté ! Mauvaise touche.";
             document.getElementById('qte').textContent = '';
+            document.getElementById('qte-name').textContent = '';
             sequence = [];
             round++;
             setTimeout(nextRound, roundDelay);
