@@ -102,6 +102,14 @@ const allSequences = [
     { name: "EXO-49 Emancipator Exosuit", seq: ['S', 'S', 'Z', 'D'] }
 ];
 
+const arrowMap = {
+    'Z': '⬆️',
+    'S': '⬇️',
+    'Q': '⬅️',
+    'D': '➡️'
+};
+
+let gameStarted = false;
 let sequence = [];
 let sequenceName = "";
 let userIndex = 0;
@@ -109,9 +117,13 @@ let timeoutId;
 let round = 0;
 let totalRounds = 5;
 let roundDelay = 1500;
+let timeBarInterval;
+let timeBarMax = 5000;
+let partyStartTime = 0;
+let partyDuration = totalRounds * timeBarMax;
+
 
 function getRandomSequence() {
-    // Prend une séquence au hasard dans la liste
     const obj = allSequences[Math.floor(Math.random() * allSequences.length)];
     sequenceName = obj.name;
     return obj.seq;
@@ -119,58 +131,111 @@ function getRandomSequence() {
 
 function startGame() {
     document.getElementById('result').textContent = '';
+    document.querySelector('.start-text').style.display = 'none';
     round = 0;
+    showPartyTimeBar();
     nextRound();
 }
 
 function nextRound() {
     if (round >= totalRounds) {
-        document.getElementById('result').textContent = "Partie terminée !";
+        document.getElementById('result').textContent = "Partie terminée ! Appuie sur une touche pour rejouer.";
         document.getElementById('qte').textContent = '';
         document.getElementById('qte-name').textContent = '';
+        document.querySelector('.start-text').style.display = '';
+        let bar = document.getElementById('time-bar');
+        if (bar) bar.style.display = 'none';
+        clearInterval(timeBarInterval);
+        gameStarted = false;
         return;
     }
     sequence = getRandomSequence();
     userIndex = 0;
-    showSequence();
+    showSequence(0);
+    let bar = document.getElementById('time-bar');
+    if (bar) bar.style.display = '';
     clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => {
-        document.getElementById('result').textContent = "Raté ! Trop lent.";
-        document.getElementById('qte').textContent = '';
-        document.getElementById('qte-name').textContent = '';
-        sequence = [];
-        round++;
-        setTimeout(nextRound, roundDelay);
-    }, 5000);
 }
 
-function showSequence() {
+timeoutId = setTimeout(() => {
+    clearInterval(timeBarInterval);
+    document.getElementById('result').textContent = "Raté ! Trop lent.";
+    document.getElementById('qte').textContent = '';
+    document.getElementById('qte-name').textContent = '';
+    let bar = document.getElementById('time-bar');
+    if (bar) bar.style.display = 'none';
+    sequence = [];
+    round++;
+}, timeBarMax);
+
+function showSequence(activeIndex = -1) {
+    const qteDiv = document.getElementById('qte');
+    qteDiv.innerHTML = sequence.map((key, idx) => {
+        const arrow = arrowMap[key] ? arrowMap[key] : key;
+        return `<span class="qte-arrow${idx === activeIndex ? ' active' : ''}">${arrow}</span>`;
+    }).join(' ');
     document.getElementById('qte-name').textContent = sequenceName;
-    document.getElementById('qte').textContent = `Appuie sur : ${sequence.join(' ')}`;
+    document.getElementById('result').textContent = '';
 }
 
 document.addEventListener('keydown', function (e) {
+    if (document.querySelector('.start-text').style.display !== 'none') return;
     if (!sequence.length) return;
     if (e.key.toUpperCase() === sequence[userIndex]) {
         userIndex++;
+        showSequence(userIndex);
         if (userIndex === sequence.length) {
             clearTimeout(timeoutId);
+            // NE PAS clearInterval(timeBarInterval) ici, la barre doit continuer pour toute la partie
+            let bar = document.getElementById('time-bar');
+            if (bar) bar.style.display = '';
             document.getElementById('result').textContent = "Bravo ! Séquence réussie !";
             document.getElementById('qte').textContent = '';
             document.getElementById('qte-name').textContent = '';
             sequence = [];
             round++;
-            setTimeout(nextRound, roundDelay);
+            // Affiche directement le prochain QTE
+            nextRound();
         }
     } else {
-        if (sequence.length) {
-            clearTimeout(timeoutId);
-            document.getElementById('result').textContent = "Raté ! Mauvaise touche.";
-            document.getElementById('qte').textContent = '';
-            document.getElementById('qte-name').textContent = '';
-            sequence = [];
-            round++;
-            setTimeout(nextRound, roundDelay);
-        }
+        userIndex = 0;
+        showSequence(0);
     }
 });
+
+function showPartyTimeBar() {
+    let bar = document.getElementById('time-bar');
+    if (!bar) {
+        bar = document.createElement('div');
+        bar.id = 'time-bar';
+        bar.style.height = '16px';
+        bar.style.width = '100%';
+        bar.style.background = '#222';
+        bar.style.borderRadius = '8px';
+        bar.style.margin = '24px 0 0 0';
+        bar.innerHTML = '<div id="time-bar-inner" style="height:100%;width:100%;background:linear-gradient(90deg,#ffe44c,#ff6a00);border-radius:8px;transition:width 0.1s;"></div>';
+        document.querySelector('.text-group').appendChild(bar);
+    }
+    let inner = document.getElementById('time-bar-inner');
+    inner.style.width = '100%';
+
+    partyStartTime = Date.now();
+    clearInterval(timeBarInterval);
+    timeBarInterval = setInterval(() => {
+        let elapsed = Date.now() - partyStartTime;
+        let percent = Math.max(0, 1 - elapsed / partyDuration);
+        inner.style.width = (percent * 100) + '%';
+        if (percent <= 0) {
+            clearInterval(timeBarInterval);
+            inner.style.width = '0%';
+            document.getElementById('result').textContent = "Temps écoulé ! Appuie sur une touche pour rejouer.";
+            document.getElementById('qte').textContent = '';
+            document.getElementById('qte-name').textContent = '';
+            document.querySelector('.start-text').style.display = '';
+            let bar = document.getElementById('time-bar');
+            if (bar) bar.style.display = 'none';
+            sequence = [];
+            gameStarted = false;
+        }
+    }, 30);
+}

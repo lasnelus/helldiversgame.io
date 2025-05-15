@@ -11,13 +11,17 @@
     <div class="white-line"></div>
     <div class="center-content">
         <img src="Super_Earth.svg" alt="Super Earth Logo" class="logo-bg" draggable="false" />
-        <h1>STRATAGEM HERO</h1>
-        <p class="start-text">Press any Stratagem Input to Start!</p>
+        <div class="text-group">
+            <h1>STRATAGEM HERO</h1>
+            <div id="qte-name"></div>
+            <div id="qte"></div>
+            <div id="result"></div>
+            <p class="start-text">Press any Stratagem Input to Start!</p>
+        </div>
     </div>
     <div class="white-line"></div>
     <script src="js/script.js"></script>
     <script>
-        let gameStarted = false;
         window.addEventListener('keydown', function () {
             if (!gameStarted) {
                 gameStarted = true;
