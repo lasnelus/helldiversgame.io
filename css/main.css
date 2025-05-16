@@ -88,15 +88,29 @@ h1 {
 
 
 .qte-arrow {
-    font-size: 2.5em;
-    margin: 0 0.15em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 0.3em;
+    /* Pour l'effet lumineux */
     filter: brightness(0.5) drop-shadow(0 0 2px #222);
     transition: filter 0.15s, text-shadow 0.15s;
-    vertical-align: middle;
 }
 .qte-arrow.active {
     filter: brightness(2) drop-shadow(0 0 12px #ffe44c) drop-shadow(0 0 24px #ffe44c);
     text-shadow: 0 0 16px #ffe44c, 0 0 32px #fff;
+}
+.arrow-svg {
+    display: block;
+    width: 64px;
+    height: 64px;
+}
+#qte {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5em;
+    min-height: 70px;
 }
 
 #time-bar {
@@ -113,4 +127,29 @@ h1 {
     background: linear-gradient(90deg, #ffe44c, #ff6a00);
     border-radius: 8px;
     transition: width 0.1s;
+}
+
+.end-round {
+    text-align: center;
+    background: #181818ee;
+    border-radius: 16px;
+    padding: 2em 1em;
+    margin: 2em auto;
+    max-width: 350px;
+    box-shadow: 0 0 24px #ffe44c55;
+}
+#restart-btn {
+    margin-top: 1em;
+    padding: 0.7em 2em;
+    font-size: 1.2em;
+    background: linear-gradient(90deg,#ffe44c,#ff6a00);
+    border: none;
+    border-radius: 8px;
+    color: #222;
+    font-weight: bold;
+    cursor: pointer;
+    transition: filter 0.2s;
+}
+#restart-btn:hover {
+    filter: brightness(1.2);
 }

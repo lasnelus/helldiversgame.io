@@ -103,12 +103,13 @@ const allSequences = [
 ];
 
 const arrowMap = {
-    'Z': '⬆️',
-    'S': '⬇️',
-    'Q': '⬅️',
-    'D': '➡️'
+    'Z': `<svg class="arrow-svg" viewBox="0 0 24 24" width="64" height="64"><path fill="white" d="M12 2l-6 6h4v8h4V8h4z"/></svg>`,
+    'S': `<svg class="arrow-svg" viewBox="0 0 24 24" width="64" height="64"><path fill="white" d="M12 22l6-6h-4V8h-4v8H6z"/></svg>`,
+    'Q': `<svg class="arrow-svg" viewBox="0 0 24 24" width="64" height="64"><path fill="white" d="M2 12l6-6v4h8v4H8v4z"/></svg>`,
+    'D': `<svg class="arrow-svg" viewBox="0 0 24 24" width="64" height="64"><path fill="white" d="M22 12l-6 6v-4H8v-4h8V6z"/></svg>`
 };
 
+let score = 0;
 let gameStarted = false;
 let sequence = [];
 let sequenceName = "";
@@ -122,7 +123,6 @@ let timeBarMax = 5000;
 let partyStartTime = 0;
 let partyDuration = totalRounds * timeBarMax;
 
-
 function getRandomSequence() {
     const obj = allSequences[Math.floor(Math.random() * allSequences.length)];
     sequenceName = obj.name;
@@ -133,13 +133,20 @@ function startGame() {
     document.getElementById('result').textContent = '';
     document.querySelector('.start-text').style.display = 'none';
     round = 0;
+    score = 0;
     showPartyTimeBar();
     nextRound();
 }
 
 function nextRound() {
     if (round >= totalRounds) {
-        document.getElementById('result').textContent = "Partie terminée ! Appuie sur une touche pour rejouer.";
+        document.getElementById('result').innerHTML = `
+            <div class="end-round">
+                <h2>Manche terminée !</h2>
+                <p>Score cumulé : <strong>${score}</strong></p>
+                <button id="restart-btn">Rejouer</button>
+            </div>
+        `;
         document.getElementById('qte').textContent = '';
         document.getElementById('qte-name').textContent = '';
         document.querySelector('.start-text').style.display = '';
@@ -147,46 +154,56 @@ function nextRound() {
         if (bar) bar.style.display = 'none';
         clearInterval(timeBarInterval);
         gameStarted = false;
+
+        setTimeout(() => {
+            const btn = document.getElementById('restart-btn');
+            if (btn) {
+                btn.onclick = () => {
+                    score = 0;
+                    startGame();
+                };
+            }
+        }, 0);
         return;
     }
     sequence = getRandomSequence();
     userIndex = 0;
-    showSequence(0);
+    showSequence();
     let bar = document.getElementById('time-bar');
     if (bar) bar.style.display = '';
     clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => {
+        clearInterval(timeBarInterval);
+        document.getElementById('result').textContent = "Raté ! Trop lent.";
+        document.getElementById('qte').textContent = '';
+        document.getElementById('qte-name').textContent = '';
+        let bar = document.getElementById('time-bar');
+        if (bar) bar.style.display = 'none';
+        sequence = [];
+        round++;
+        // On ne relance pas automatiquement, l'utilisateur doit relancer
+    }, timeBarMax);
 }
 
-timeoutId = setTimeout(() => {
-    clearInterval(timeBarInterval);
-    document.getElementById('result').textContent = "Raté ! Trop lent.";
-    document.getElementById('qte').textContent = '';
-    document.getElementById('qte-name').textContent = '';
-    let bar = document.getElementById('time-bar');
-    if (bar) bar.style.display = 'none';
-    sequence = [];
-    round++;
-}, timeBarMax);
-
-function showSequence(activeIndex = -1) {
+function showSequence() {
     const qteDiv = document.getElementById('qte');
     qteDiv.innerHTML = sequence.map((key, idx) => {
-        const arrow = arrowMap[key] ? arrowMap[key] : key;
-        return `<span class="qte-arrow${idx === activeIndex ? ' active' : ''}">${arrow}</span>`;
+        const isActive = idx < userIndex;
+        return `<span class="qte-arrow${isActive ? ' active' : ''}">${arrowMap[key] ? arrowMap[key] : key}</span>`;
     }).join(' ');
     document.getElementById('qte-name').textContent = sequenceName;
     document.getElementById('result').textContent = '';
 }
 
 document.addEventListener('keydown', function (e) {
-    if (document.querySelector('.start-text').style.display !== 'none') return;
+    if (document.querySelector('.start-text') && document.querySelector('.start-text').style.display !== 'none') return;
     if (!sequence.length) return;
     if (e.key.toUpperCase() === sequence[userIndex]) {
         userIndex++;
-        showSequence(userIndex);
+        showSequence();
         if (userIndex === sequence.length) {
             clearTimeout(timeoutId);
-            // NE PAS clearInterval(timeBarInterval) ici, la barre doit continuer pour toute la partie
+            score += 10;
             let bar = document.getElementById('time-bar');
             if (bar) bar.style.display = '';
             document.getElementById('result').textContent = "Bravo ! Séquence réussie !";
@@ -194,15 +211,13 @@ document.addEventListener('keydown', function (e) {
             document.getElementById('qte-name').textContent = '';
             sequence = [];
             round++;
-            // Affiche directement le prochain QTE
             nextRound();
         }
     } else {
         userIndex = 0;
-        showSequence(0);
+        showSequence();
     }
 });
-
 function showPartyTimeBar() {
     let bar = document.getElementById('time-bar');
     if (!bar) {
@@ -214,7 +229,9 @@ function showPartyTimeBar() {
         bar.style.borderRadius = '8px';
         bar.style.margin = '24px 0 0 0';
         bar.innerHTML = '<div id="time-bar-inner" style="height:100%;width:100%;background:linear-gradient(90deg,#ffe44c,#ff6a00);border-radius:8px;transition:width 0.1s;"></div>';
-        document.querySelector('.text-group').appendChild(bar);
+        // Ajoute la barre dans le DOM, adapte ce sélecteur à ta structure HTML
+        let group = document.querySelector('.text-group') || document.body;
+        group.appendChild(bar);
     }
     let inner = document.getElementById('time-bar-inner');
     inner.style.width = '100%';
