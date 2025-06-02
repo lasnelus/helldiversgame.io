@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Cube Follows Cursor</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #222;
+        }
+
+        #gameArea {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #cube {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #fff;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(0deg);
+            background-image: url('assets/character_non_fireing.png');
+            background-size: cover;
+        }
+
+        .projectile {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: yellow;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10;
+            transform: translate(-50%, -50%);
+        }
+
+        #gameCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="gameCanvas" width="1280" height="960" style="position:absolute;top:0;left:0;z-index:0;"></canvas>
+    <div id="gameArea">
+        <div id="cube"></div>
+    </div>
+    <div id="ath" style="position:fixed;bottom:20px;left:20px;color:white;font-family:sans-serif;z-index:100;">
+        <img id="weaponImg" src="" alt="Weapon" style="width:48px;height:48px;vertical-align:middle;">
+        <span id="ammoDisplay" style="font-size:2em;margin-left:10px;"></span>
+    </div>
+    <script src="js/env.js" defer></script>
+    <script src="js/weapon.js" defer></script>
+    <script src="js/player.js" defer></script>
+</body>
+
+</html>
