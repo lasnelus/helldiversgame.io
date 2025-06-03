@@ -28,7 +28,14 @@ const gameMap = generateMap();
 // --- Joueur logique (centré au départ) ---
 let player = {
     x: Math.floor(mapWidth / 2),
-    y: Math.floor(mapHeight / 2)
+    y: Math.floor(mapHeight / 2),
+    vx: 0,
+    vy: 0,
+    speed: 0.05, // Vitesse en cases par frame
+    moveUp: false,
+    moveDown: false,
+    moveLeft: false,
+    moveRight: false
 };
 
 spawnEnemy(10, 10, { ...ENEMY_TYPES.grunt, static: true });
@@ -68,25 +75,53 @@ function drawMap() {
     document.getElementById('playerHp').textContent = "Vie : " + playerHp;
 }
 
-// --- Déplacement ZQSD avec collision murs ---
+// --- Gestion des touches maintenues ---
 document.addEventListener('keydown', function (e) {
-    let moved = false;
-    if ((e.key === "z" || e.key === "Z") && player.y > 0 && gameMap[player.y - 1][player.x] !== 1) {
-        player.y--; moved = true;
-    }
-    if ((e.key === "s" || e.key === "S") && player.y < mapHeight - 1 && gameMap[player.y + 1][player.x] !== 1) {
-        player.y++; moved = true;
-    }
-    if ((e.key === "q" || e.key === "Q") && player.x > 0 && gameMap[player.y][player.x - 1] !== 1) {
-        player.x--; moved = true;
-    }
-    if ((e.key === "d" || e.key === "D") && player.x < mapWidth - 1 && gameMap[player.y][player.x + 1] !== 1) {
-        player.x++; moved = true;
-    }
-    if (moved) {
-        drawMap();
-    }
+    if (e.key === "z" || e.key === "Z" || e.key === "ArrowUp") player.moveUp = true;
+    if (e.key === "s" || e.key === "S" || e.key === "ArrowDown") player.moveDown = true;
+    if (e.key === "q" || e.key === "Q" || e.key === "ArrowLeft") player.moveLeft = true;
+    if (e.key === "d" || e.key === "D" || e.key === "ArrowRight") player.moveRight = true;
 });
+document.addEventListener('keyup', function (e) {
+    if (e.key === "z" || e.key === "Z" || e.key === "ArrowUp") player.moveUp = false;
+    if (e.key === "s" || e.key === "S" || e.key === "ArrowDown") player.moveDown = false;
+    if (e.key === "q" || e.key === "Q" || e.key === "ArrowLeft") player.moveLeft = false;
+    if (e.key === "d" || e.key === "D" || e.key === "ArrowRight") player.moveRight = false;
+});
+
+// --- Fonction de déplacement fluide ---
+function updatePlayerMovement() {
+    let dx = 0, dy = 0;
+    if (player.moveUp) dy -= 1;
+    if (player.moveDown) dy += 1;
+    if (player.moveLeft) dx -= 1;
+    if (player.moveRight) dx += 1;
+
+    // Normalisation pour diagonale
+    if (dx !== 0 && dy !== 0) {
+        dx *= Math.SQRT1_2;
+        dy *= Math.SQRT1_2;
+    }
+
+    // Collision murs (on vérifie la prochaine case)
+    let nextX = player.x + dx * player.speed;
+    let nextY = player.y + dy * player.speed;
+
+    // Collision horizontale
+    if (
+        nextX >= 0 && nextX < mapWidth &&
+        gameMap[Math.floor(player.y)][Math.floor(nextX)] !== 1
+    ) {
+        player.x = nextX;
+    }
+    // Collision verticale
+    if (
+        nextY >= 0 && nextY < mapHeight &&
+        gameMap[Math.floor(nextY)][Math.floor(player.x)] !== 1
+    ) {
+        player.y = nextY;
+    }
+}
 
 function updateProjectiles() {
     const rect = gameArea.getBoundingClientRect();
@@ -162,6 +197,7 @@ function updateProjectiles() {
 }
 // --- Boucle d'affichage ---
 function gameLoop() {
+    updatePlayerMovement();
     updateEnemies();
     updateProjectiles();
     drawMap();
