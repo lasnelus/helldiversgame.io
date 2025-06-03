@@ -31,7 +31,9 @@ let player = {
     y: Math.floor(mapHeight / 2)
 };
 
-spawnEnemy(player.x + 3, player.y + 2, { hp: 10, damage: 2, fireRate: 60 });
+spawnEnemy(10, 10, { ...ENEMY_TYPES.grunt, static: true });
+spawnEnemy(9, 10, { ...ENEMY_TYPES.tank, static: true });
+spawnEnemy(8, 10, { ...ENEMY_TYPES.fast, static: true });
 // --- Canvas ---
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -63,10 +65,11 @@ function drawMap() {
             }
         }
     }
+    document.getElementById('playerHp').textContent = "Vie : " + playerHp;
 }
 
 // --- Déplacement ZQSD avec collision murs ---
-document.addEventListener('keydown', function(e) {
+document.addEventListener('keydown', function (e) {
     let moved = false;
     if ((e.key === "z" || e.key === "Z") && player.y > 0 && gameMap[player.y - 1][player.x] !== 1) {
         player.y--; moved = true;
@@ -84,9 +87,83 @@ document.addEventListener('keydown', function(e) {
         drawMap();
     }
 });
+
+function updateProjectiles() {
+    const rect = gameArea.getBoundingClientRect();
+
+    // Supprime tous les anciens divs projectiles
+    document.querySelectorAll('.projectile').forEach(el => el.remove());
+
+    // Met à jour et affiche les projectiles
+    projectiles = projectiles.filter(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // Conversion position pixel -> case map
+        // Calcule l'offset de la caméra (comme dans drawMap)
+        const offsetX = Math.floor(gameArea.offsetWidth / 2 - tileSize / 2 - player.x * tileSize);
+        const offsetY = Math.floor(gameArea.offsetHeight / 2 - tileSize / 2 - player.y * tileSize);
+
+        // Position du projectile en coordonnées map
+        const mapX = (p.x - offsetX) / tileSize;
+        const mapY = (p.y - offsetY) / tileSize;
+
+        const tileX = Math.floor(mapX);
+        const tileY = Math.floor(mapY);
+
+        if (
+            tileX < 0 || tileX >= mapWidth ||
+            tileY < 0 || tileY >= mapHeight ||
+            gameMap[tileY][tileX] === 1
+        ) {
+            return false;
+        }
+
+        // Collision avec le joueur (pour les projectiles ennemis)
+        if (p.fromEnemy) {
+            const dx = (player.x + 0.5) * tileSize - p.x;
+            const dy = (player.y + 0.5) * tileSize - p.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < tileSize / 2) {
+                console.log("Projectile hit enemy!");
+                window.damageEnemy(enemy, p.damage || 1);
+                return false;
+            }
+        }
+
+        // Collision avec les ennemis (pour les projectiles du joueur)
+        if (!p.fromEnemy) {
+            for (const enemy of window.enemies) {
+                if (!enemy.alive) continue;
+                const offsetX = Math.floor(gameArea.offsetWidth / 2 - tileSize / 2 - player.x * tileSize);
+                const offsetY = Math.floor(gameArea.offsetHeight / 2 - tileSize / 2 - player.y * tileSize);
+                const enemyPx = enemy.x * tileSize + offsetX + tileSize / 2;
+                const enemyPy = enemy.y * tileSize + offsetY + tileSize / 2;
+
+                const dx = enemyPx - p.x;
+                const dy = enemyPy - p.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < tileSize / 2) {
+                    window.damageEnemy(enemy, p.damage || 1);
+                    return false;
+                }
+            }
+        }
+        // Affichage du projectile
+        const proj = document.createElement('div');
+        proj.className = 'projectile';
+        proj.style.left = `${p.x}px`;
+        proj.style.top = `${p.y}px`;
+        proj.style.transform = 'translate(-50%, -50%)';
+        gameArea.appendChild(proj);
+
+        return true;
+    });
+}
 // --- Boucle d'affichage ---
 function gameLoop() {
     updateEnemies();
+    updateProjectiles();
     drawMap();
     requestAnimationFrame(gameLoop);
 }

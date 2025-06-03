@@ -1,34 +1,79 @@
+const ENEMY_TYPES = {
+    grunt: {
+        hp: 15,
+        maxHp: 15,
+        damage: 1,
+        fireRate: 90,
+        lootTable: ['medkit', 'ammo'],
+        color: 'red',
+        img: 'assets/grunt_non_fireing.png'    // <-- Add your PNG path here
+    },
+    tank: {
+        hp: 20,
+        maxHp: 20,
+        damage: 4,
+        fireRate: 150,
+        lootTable: ['ammo'],
+        color: 'darkred',
+        img: 'assets/tank_non_fireing.png'
+    },
+    fast: {
+        hp: 3,
+        maxHp: 3,
+        damage: 1,
+        fireRate: 60,
+        lootTable: ['medkit'],
+        color: 'orange',
+        img: 'assets/fast_non_fireing.png'
+    }
+    // Add more types as needed
+};
+
 // Tableau global des ennemis
 let enemies = [];
 
 // Création d'un ennemi HTML
-function spawnEnemy(x, y, options = {}) {
+function spawnEnemy(x, y, typeOrOptions = "grunt") {
+    let options = {};
+    if (typeof typeOrOptions === "string") {
+        options = { ...ENEMY_TYPES[typeOrOptions] };
+    } else {
+        options = { ...typeOrOptions };
+    }
+
     const enemyDiv = document.createElement('div');
     enemyDiv.className = 'enemy';
     enemyDiv.style.position = 'absolute';
-    enemyDiv.style.background = 'red';
-    enemyDiv.style.borderRadius = '50%';
     enemyDiv.style.zIndex = 10;
     enemyDiv.style.pointerEvents = 'none';
     enemyDiv.style.width = tileSize + 'px';
     enemyDiv.style.height = tileSize + 'px';
+
+    // Set PNG as background image (preferred for easy scaling)
+    if (options.img) {
+        enemyDiv.style.background = `url('${options.img}') center/cover no-repeat`;
+    } else {
+        enemyDiv.style.background = options.color || 'red';
+    }
+
     document.getElementById('gameArea').appendChild(enemyDiv);
 
     enemies.push({
         x, y,
         vx: 0, vy: 0,
         hp: options.hp || 5,
-        maxHp: options.hp || 5,
+        maxHp: options.maxHp || options.hp || 5,
         damage: options.damage || 1,
         fireCooldown: 0,
-        fireRate: options.fireRate || 90, // frames entre tirs
+        fireRate: options.fireRate || 90,
         lootTable: options.lootTable || ['medkit', 'ammo'],
         alive: true,
-        div: enemyDiv
+        div: enemyDiv,
+        static: options.static || false
     });
 }
 
-// Mise à jour des ennemis (déplacement, tir, position HTML)
+
 function updateEnemies() {
     const rect = document.getElementById('gameArea').getBoundingClientRect();
     for (const enemy of enemies) {
@@ -37,42 +82,34 @@ function updateEnemies() {
             continue;
         }
 
-        // Déplacement vers le joueur
-        let dx = player.x - enemy.x;
-        let dy = player.y - enemy.y;
-        let dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist > 0.1) {
-            dx /= dist; dy /= dist;
-            let nextX = enemy.x + dx * 0.2;
-            let nextY = enemy.y + dy * 0.2;
+        // --- Déplacement logique sur la map ---
+        if (!enemy.static) { // <-- Ajout ici
+            let dx = player.x - enemy.x;
+            let dy = player.y - enemy.y;
+            let dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > 0.1) {
+                dx /= dist; dy /= dist;
+                let nextX = enemy.x + dx * 0.2;
+                let nextY = enemy.y + dy * 0.2;
 
-            let moved = false;
-            // Essaye X d'abord
-            if (
-                nextX >= 0 && nextX < mapWidth &&
-                gameMap[Math.floor(enemy.y)][Math.floor(nextX)] !== 1
-            ) {
-                enemy.x = nextX;
-                moved = true;
-            }
-            // Sinon essaye Y
-            if (
-                !moved &&
-                nextY >= 0 && nextY < mapHeight &&
-                gameMap[Math.floor(nextY)][Math.floor(enemy.x)] !== 1
-            ) {
-                enemy.y = nextY;
+                // Déplacement sur X
+                if (
+                    nextX >= 0 && nextX < mapWidth &&
+                    gameMap[Math.floor(enemy.y)][Math.floor(nextX)] !== 1
+                ) {
+                    enemy.x = nextX;
+                }
+                // Déplacement sur Y
+                if (
+                    nextY >= 0 && nextY < mapHeight &&
+                    gameMap[Math.floor(nextY)][Math.floor(enemy.x)] !== 1
+                ) {
+                    enemy.y = nextY;
+                }
             }
         }
-        // Tir automatique
-        if (enemy.fireCooldown > 0) {
-            enemy.fireCooldown--;
-        } else {
-            fireEnemyProjectile(enemy);
-            enemy.fireCooldown = enemy.fireRate;
-        }
 
-        // Mise à jour position HTML (centré sur la caméra)
+        // --- Position HTML calculée par rapport au joueur centré ---
         const left = rect.width / 2 + (enemy.x - player.x) * tileSize;
         const top = rect.height / 2 + (enemy.y - player.y) * tileSize;
         enemy.div.style.left = `${left}px`;
@@ -82,9 +119,23 @@ function updateEnemies() {
         enemy.div.style.transform = 'translate(-50%, -50%)';
 
         // Affichage de la barre de vie
-        enemy.div.innerHTML = `<div style="position:absolute;left:0;top:-10px;width:100%;height:6px;background:black;">
-            <div style="width:${100 * enemy.hp / enemy.maxHp}%;height:100%;background:lime;"></div>
-        </div>`;
+        enemy.div.innerHTML = `
+    <div style="position:absolute;left:0;top:-10px;width:100%;height:6px;background:black;">
+        <div style="
+            width:100%;
+            height:100%;
+            position:relative;
+        ">
+            <div style="
+                height:100%;
+                background:lime;
+                width:${Math.max(0, Math.min(100, 100 * enemy.hp / enemy.maxHp))}%;
+                transition:width 0.2s;
+                position:absolute;
+                left:0;top:0;
+            "></div>
+        </div>
+    </div>`;
     }
 }
 
@@ -109,6 +160,15 @@ function fireEnemyProjectile(enemy) {
 // Gestion des dégâts et loot
 function damageEnemy(enemy, amount) {
     enemy.hp -= amount;
+
+    // Add blinking effect
+    if (enemy.div) {
+        enemy.div.classList.add('hit');
+        setTimeout(() => {
+            if (enemy.div) enemy.div.classList.remove('hit');
+        }, 400); // Duration matches the animation (0.2s * 2)
+    }
+
     if (enemy.hp <= 0) {
         enemy.alive = false;
         dropLoot(enemy);
@@ -117,8 +177,9 @@ function damageEnemy(enemy, amount) {
 }
 
 function dropLoot(enemy) {
-    // Exemple simple : loot aléatoire
     const loot = enemy.lootTable[Math.floor(Math.random() * enemy.lootTable.length)];
-    // À toi d'ajouter le loot sur la map ou dans l'inventaire du joueur
     console.log("Loot dropped:", loot, "at", enemy.x, enemy.y);
 }
+
+window.enemies = enemies;
+window.damageEnemy = damageEnemy;

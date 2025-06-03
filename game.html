@@ -53,6 +53,24 @@
         .enemy {
             transition: left 0.05s linear, top 0.05s linear;
         }
+
+        .enemy.hit {
+            animation: blink 0.2s linear 2;
+        }
+
+        @keyframes blink {
+            0% {
+                filter: brightness(2);
+            }
+
+            50% {
+                filter: brightness(0.5);
+            }
+
+            100% {
+                filter: brightness(2);
+            }
+        }
     </style>
 </head>
 
@@ -61,12 +79,14 @@
         <canvas id="gameCanvas"></canvas>
         <div id="cube"></div>
     </div>
+    <div id="playerHp" style="position:absolute;top:10px;left:10px;color:white;font-size:24px;">Vie : 10</div>
     <div id="ath" style="position:fixed;bottom:20px;left:20px;color:white;font-family:sans-serif;z-index:100;">
         <img id="weaponImg" src="" alt="Weapon" style="width:48px;height:48px;vertical-align:middle;">
         <span id="ammoDisplay" style="font-size:2em;margin-left:10px;"></span>
     </div>
-    <script src="js/env.js" defer></script>
     <script src="js/enemies.js"></script>
+    <script src="js/env.js" defer></script>
+
     <script src="js/weapon.js" defer></script>
     <script src="js/player.js" defer></script>
 </body>

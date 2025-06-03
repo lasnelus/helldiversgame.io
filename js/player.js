@@ -166,52 +166,15 @@ gameArea.addEventListener('mouseleave', function () {
     }
 });
 
-function updateProjectiles() {
-    const rect = gameArea.getBoundingClientRect();
+let playerHp = 10; // Exemple de points de vie
 
-    // Supprime tous les anciens divs projectiles
-    document.querySelectorAll('.projectile').forEach(el => el.remove());
-
-    // Met à jour et affiche les projectiles
-    projectiles = projectiles.filter(p => {
-        p.x += p.vx;
-        p.y += p.vy;
-
-        // Conversion position pixel -> case map
-        // Calcule l'offset de la caméra (comme dans drawMap)
-        const offsetX = Math.floor(gameArea.offsetWidth / 2 - tileSize / 2 - player.x * tileSize);
-        const offsetY = Math.floor(gameArea.offsetHeight / 2 - tileSize / 2 - player.y * tileSize);
-
-        // Position du projectile en coordonnées map
-        const mapX = (p.x - offsetX) / tileSize;
-        const mapY = (p.y - offsetY) / tileSize;
-
-        const tileX = Math.floor(mapX);
-        const tileY = Math.floor(mapY);
-
-        if (
-            tileX < 0 || tileX >= mapWidth ||
-            tileY < 0 || tileY >= mapHeight ||
-            gameMap[tileY][tileX] === 1
-        ) {
-            return false;
-        }
-
-        // Affichage du projectile
-        const proj = document.createElement('div');
-        proj.className = 'projectile';
-        proj.style.left = `${p.x}px`;
-        proj.style.top = `${p.y}px`;
-        proj.style.transform = 'translate(-50%, -50%)';
-        gameArea.appendChild(proj);
-
-        return true;
-    });
-}
-
-function gameLoop() {
-    updateProjectiles();
-    requestAnimationFrame(gameLoop);
+function damagePlayer(amount) {
+    playerHp -= amount;
+    if (playerHp <= 0) {
+        playerHp = 0;
+        alert("Game Over !");
+        // Tu peux ajouter ici une logique de reset ou de fin de partie
+    }
 }
 
 // Initial draw
