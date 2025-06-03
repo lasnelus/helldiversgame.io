@@ -1,7 +1,13 @@
 // --- Paramètres de la map ---
 const mapWidth = 40;
-const mapHeight = 30;
+const mapHeight = 40;
 const tileSize = 50; // Taille en pixels (doit être la même que le #cube)
+let projectiles = [];
+
+const textures = {
+    0: new Image(),
+};
+textures[0].src = 'assets/metal_ground.png';
 
 // --- Génération d'une map simple (0 = sol, 1 = mur) ---
 function generateMap() {
@@ -25,11 +31,17 @@ let player = {
     y: Math.floor(mapHeight / 2)
 };
 
+spawnEnemy(player.x + 3, player.y + 2, { hp: 10, damage: 2, fireRate: 60 });
 // --- Canvas ---
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
 // --- Dessin de la map centrée sur le joueur ---
 function drawMap() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -41,11 +53,12 @@ function drawMap() {
             let tile = gameMap[y][x];
             let px = x * tileSize + offsetX;
             let py = y * tileSize + offsetY;
-            if (tile === 1) {
-                ctx.fillStyle = "#444";
-                ctx.fillRect(px, py, tileSize, tileSize);
+            let img = textures[tile];
+            if (img && img.complete) {
+                ctx.drawImage(img, px, py, tileSize, tileSize);
             } else {
-                ctx.fillStyle = "#ccc";
+                // fallback color if image not loaded
+                ctx.fillStyle = tile === 1 ? "#444" : "#ccc";
                 ctx.fillRect(px, py, tileSize, tileSize);
             }
         }
@@ -73,6 +86,7 @@ document.addEventListener('keydown', function(e) {
 });
 // --- Boucle d'affichage ---
 function gameLoop() {
+    updateEnemies();
     drawMap();
     requestAnimationFrame(gameLoop);
 }

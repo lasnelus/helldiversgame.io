@@ -49,12 +49,16 @@
             height: 100vh;
             z-index: 0;
         }
+
+        .enemy {
+            transition: left 0.05s linear, top 0.05s linear;
+        }
     </style>
 </head>
 
 <body>
-    <canvas id="gameCanvas" width="1280" height="960" style="position:absolute;top:0;left:0;z-index:0;"></canvas>
-    <div id="gameArea">
+    <div id="gameArea" style="position:relative;width:100vw;height:100vh;overflow:hidden;">
+        <canvas id="gameCanvas"></canvas>
         <div id="cube"></div>
     </div>
     <div id="ath" style="position:fixed;bottom:20px;left:20px;color:white;font-family:sans-serif;z-index:100;">
@@ -62,6 +66,7 @@
         <span id="ammoDisplay" style="font-size:2em;margin-left:10px;"></span>
     </div>
     <script src="js/env.js" defer></script>
+    <script src="js/enemies.js"></script>
     <script src="js/weapon.js" defer></script>
     <script src="js/player.js" defer></script>
 </body>

@@ -11,7 +11,6 @@ let cubeState = {
 
 let isFiring = false;
 let autoFireInterval = null;
-let projectiles = [];
 let isReloading = false;
 let lastMouseX = cubeState.x;
 let lastMouseY = cubeState.y;
@@ -123,14 +122,14 @@ gameArea.addEventListener('mousedown', function (e) {
     }
 });
 // reload
-document.addEventListener('keydown', function(e) {
+document.addEventListener('keydown', function (e) {
     if (e.key === 'r' || e.key === 'R') {
         reloadWeapon();
     }
 });
 
 // Example: switch to SMG on key '2'
-document.addEventListener('keydown', function(e) {
+document.addEventListener('keydown', function (e) {
     if (e.key === '1') {
         currentWeapon = weapons.handgun;
         currentAmmo = currentWeapon.magazineSize;
@@ -179,16 +178,23 @@ function updateProjectiles() {
         p.y += p.vy;
 
         // Conversion position pixel -> case map
-        const mapX = Math.floor((p.x - rect.width / 2 + player.x * tileSize) / tileSize);
-        const mapY = Math.floor((p.y - rect.height / 2 + player.y * tileSize) / tileSize);
+        // Calcule l'offset de la caméra (comme dans drawMap)
+        const offsetX = Math.floor(gameArea.offsetWidth / 2 - tileSize / 2 - player.x * tileSize);
+        const offsetY = Math.floor(gameArea.offsetHeight / 2 - tileSize / 2 - player.y * tileSize);
 
-        // Collision avec un mur
+        // Position du projectile en coordonnées map
+        const mapX = (p.x - offsetX) / tileSize;
+        const mapY = (p.y - offsetY) / tileSize;
+
+        const tileX = Math.floor(mapX);
+        const tileY = Math.floor(mapY);
+
         if (
-            mapX < 0 || mapX >= mapWidth ||
-            mapY < 0 || mapY >= mapHeight ||
-            gameMap[mapY][mapX] === 1
+            tileX < 0 || tileX >= mapWidth ||
+            tileY < 0 || tileY >= mapHeight ||
+            gameMap[tileY][tileX] === 1
         ) {
-            return false; // supprime le projectile
+            return false;
         }
 
         // Affichage du projectile
