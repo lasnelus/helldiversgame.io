@@ -1,8 +1,23 @@
-// --- Paramètres de la map ---
-const mapWidth = 40;
-const mapHeight = 40;
-const tileSize = 50; // Taille en pixels (doit être la même que le #cube)
-let projectiles = [];
+let isPaused = false;
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === "Escape") {
+        // Si l'inventaire est ouvert, on le ferme
+        if (inventoryOpen) {
+            inventoryOpen = false;
+            document.getElementById('inventoryOverlay').style.display = 'none';
+            return;
+        }
+        // Si la boutique PNJ est ouverte, on la ferme
+        if (document.getElementById('shopOverlay').style.display === 'block') {
+            closeShop();
+            return;
+        }
+        // Sinon, on gère la pause
+        isPaused = !isPaused;
+        document.getElementById('pauseOverlay').style.display = isPaused ? 'flex' : 'none';
+    }
+});
 
 const textures = {
     0: new Image(),
@@ -25,29 +40,6 @@ function generateMap() {
 }
 const gameMap = generateMap();
 
-// --- Joueur logique (centré au départ) ---
-let player = {
-    x: Math.floor(mapWidth / 2),
-    y: Math.floor(mapHeight / 2),
-    vx: 0,
-    vy: 0,
-    Hp: 100,
-    maxHp: 100,
-    speed: 0.05, // Vitesse en cases par frame
-    sprintSpeed: 0.12, // Vitesse en sprint
-    stamina: 100,
-    maxStamina: 100,
-    staminaRegen: 0.12, // Régénération d'endurance par seconde
-    staminaRegenDelay: 1200, // délai en ms avant la regen (ex: 1.2s)
-    moveUp: false,
-    moveDown: false,
-    moveLeft: false,
-    moveRight: false
-};
-
-spawnEnemy(10, 10, { ...ENEMY_TYPES.grunt, static: true });
-spawnEnemy(9, 10, { ...ENEMY_TYPES.tank, static: true });
-spawnEnemy(8, 10, { ...ENEMY_TYPES.fast, static: true });
 // --- Canvas ---
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -80,6 +72,18 @@ function drawMap() {
         }
     }
 }
+//inventaire
+
+let inventoryOpen = false;
+document.addEventListener('keydown', function(e) {
+    if (e.key === "Tab") {
+        e.preventDefault();
+        inventoryOpen = !inventoryOpen;
+        document.getElementById('inventoryOverlay').style.display = inventoryOpen ? 'block' : 'none';
+        if (inventoryOpen) updateInventoryDisplay();
+    }
+    // ... (garde le code pause/escape déjà présent)
+});
 
 // --- Gestion des touches maintenues ---
 document.addEventListener('keydown', function (e) {
@@ -148,6 +152,58 @@ function updatePlayerMovement() {
         gameMap[Math.ceil(nextY)][Math.floor(player.x)] !== 1
     ) {
         player.y = nextY;
+    }
+}
+
+
+function updateInventoryDisplay() {
+    const slotsDiv = document.getElementById('inventorySlots');
+    slotsDiv.innerHTML = '';
+    for (let i = 0; i < inventory.slots; i++) {
+        const slot = document.createElement('div');
+        slot.style.width = "48px";
+        slot.style.height = "48px";
+        slot.style.background = "#222";
+        slot.style.border = "2px solid #444";
+        slot.style.borderRadius = "8px";
+        slot.style.display = "flex";
+        slot.style.alignItems = "center";
+        slot.style.justifyContent = "center";
+        slot.style.fontSize = "2em";
+        slot.style.position = "relative";
+        if (inventory.items[i]) {
+            const item = inventory.items[i];
+            const img = document.createElement('img');
+            img.src = LOOT_IMAGES[item.type] || 'assets/loot_default.png';
+            img.style.width = "80%";
+            img.style.height = "80%";
+            img.title = item.type;
+            slot.appendChild(img);
+        }
+        slotsDiv.appendChild(slot);
+    }
+    document.getElementById('inventoryInfo').textContent =
+        `Emplacements utilisés : ${inventory.items.length} / ${inventory.slots}`;
+}
+
+function updateQuestDisplay() {
+    const overlay = document.getElementById('questOverlay');
+    const list = document.getElementById('questList');
+    if (!quests.length) {
+        overlay.style.display = "none";
+        return;
+    }
+    overlay.style.display = "block";
+    list.innerHTML = "";
+    for (const quest of quests) {
+        const div = document.createElement('div');
+        div.style.marginBottom = "8px";
+        div.style.color = quest.completed ? "#7fff7f" : "#fff";
+        div.innerHTML = `<b>${quest.title}</b><br>
+            <span style="font-size:0.95em;">${quest.description}</span><br>
+            <span style="font-size:0.9em;">Progression : ${quest.progress} / ${quest.required}</span>
+            ${quest.completed ? "<br><i>Terminé !</i>" : ""}`;
+        list.appendChild(div);
     }
 }
 
@@ -224,13 +280,20 @@ function updateProjectiles() {
     });
 }
 // --- Boucle d'affichage ---
+
+spawnEnemy(10, 10, { ...ENEMY_TYPES.grunt, static: true });
+spawnEnemy(9, 10, { ...ENEMY_TYPES.tank, static: true });
+spawnEnemy(8, 10, { ...ENEMY_TYPES.fast, static: true });
 function gameLoop() {
-    updateATH();
-    updatePlayerMovement();
-    updateEnemies();
-    updateLoots();
-    updateProjectiles();
-    drawMap();
+    if (!isPaused) {
+        updateATH();
+        updatePlayerMovement();
+        updatePNJs();
+        updateEnemies();
+        updateLoots();
+        updateProjectiles();
+        drawMap();
+    }
     requestAnimationFrame(gameLoop);
 }
 gameLoop();

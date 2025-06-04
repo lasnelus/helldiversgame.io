@@ -185,4 +185,3 @@ function damagePlayer(amount) {
 updateCube();
 setCubeTexture('assets/character_non_fireing.png');
 updateATH();
-gameLoop();

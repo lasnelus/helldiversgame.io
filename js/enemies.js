@@ -176,6 +176,7 @@ function damageEnemy(enemy, amount) {
 
     if (enemy.hp <= 0) {
         enemy.alive = false;
+        checkQuests("kill", { target: enemy.type });
         dropLoot(enemy);
         if (enemy.div) enemy.div.style.display = 'none';
     }
@@ -218,6 +219,29 @@ function dropLoot(enemy) {
     loots.push(loot);
 }
 
+function tryPickupLoot(loot) {
+    // Si inventaire extensible (ex: ramasser un sac)
+    if (loot.type === 'bag') {
+        inventory.slots += 4; // ou la valeur que tu veux
+        loot.picked = true;
+        loot.div.remove();
+        if (typeof updateInventoryDisplay === "function") updateInventoryDisplay();
+        return;
+    }
+
+    // Si inventaire plein, on ne ramasse pas
+    if (inventory.items.length >= inventory.slots) {
+        // Optionnel : message "Inventaire plein"
+        return;
+    }
+
+    // Ajoute l'objet à l'inventaire
+    inventory.items.push({ type: loot.type });
+    loot.picked = true;
+    checkQuests("collect", { item: loot.type });
+    loot.div.remove();
+    if (typeof updateInventoryDisplay === "function") updateInventoryDisplay();
+}
 
 function updateLoots() {
     const rect = document.getElementById('gameArea').getBoundingClientRect();
@@ -233,14 +257,7 @@ function updateLoots() {
         // Ramassage par collision (distance < 0.6 case)
         const dist = Math.hypot(player.x - loot.x, player.y - loot.y);
         if (dist < 0.6) {
-            if (loot.type === 'medkit') {
-                player.hp = Math.min(player.maxHp, player.hp + 10);
-            }
-            if (loot.type === 'ammo') {
-                // Ajoute des munitions ici
-            }
-            loot.picked = true;
-            loot.div.remove();
+            tryPickupLoot(loot);
         }
     }
     // Nettoyage des loots ramassés

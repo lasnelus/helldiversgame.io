@@ -75,6 +75,26 @@
 </head>
 
 <body>
+    <div id="shopOverlay" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+background:#222;padding:24px 32px;border-radius:12px;z-index:9999;min-width:340px;color:white;">
+        <div style="font-size:1.5em;margin-bottom:10px;">Boutique</div>
+        <div id="shopStock"></div>
+        <div style="margin-top:10px;">Votre argent : <span id="playerMoney"></span></div>
+        <button onclick="closeShop()" style="margin-top:16px;">Fermer</button>
+    </div>
+    <div id="inventoryOverlay" style="
+    display:none;position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
+    background:rgba(30,30,30,0.95);padding:24px 32px;border-radius:12px;z-index:9999;
+    box-shadow:0 0 40px #000;min-width:340px;">
+        <div style="color:white;font-size:1.5em;margin-bottom:10px;">Inventaire</div>
+        <div id="inventorySlots" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+        <div id="inventoryInfo" style="color:#aaa;font-size:0.9em;margin-top:10px;"></div>
+    </div>
+    <div id="questOverlay"
+        style="position:fixed;top:10px;right:10px;z-index:100;background:rgba(30,30,30,0.95);padding:16px 24px;border-radius:12px;min-width:220px;display:none;">
+        <div style="color:white;font-size:1.2em;margin-bottom:8px;">Quêtes</div>
+        <div id="questList"></div>
+    </div>
     <div id="gameArea" style="position:relative;width:100vw;height:100vh;overflow:hidden;">
         <canvas id="gameCanvas"></canvas>
         <div id="cube"></div>
@@ -97,11 +117,25 @@
         <img id="weaponImg" src="" alt="Weapon" style="width:48px;height:48px;vertical-align:middle;">
         <span id="ammoDisplay" style="font-size:2em;margin-left:10px;"></span>
     </div>
-    <script src="js/enemies.js"></script>
-    <script src="js/env.js" defer></script>
-
+    <script src="js/global.js"></script>
     <script src="js/weapon.js" defer></script>
+    <script src="js/enemies.js" defer></script>
     <script src="js/player.js" defer></script>
+    <script src="js/pnj.js" defer></script>
+    <script src="js/env.js" defer></script>
 </body>
+<div id="pauseOverlay" style="
+    display:none;
+    position:fixed;
+    top:0;left:0;width:100vw;height:100vh;
+    background:rgba(0,0,0,0.6);
+    color:white;
+    font-size:3em;
+    align-items:center;
+    justify-content:center;
+    z-index:9999;
+">
+    PAUSE
+</div>
 
 </html>
