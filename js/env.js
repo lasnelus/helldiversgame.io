@@ -31,7 +31,14 @@ let player = {
     y: Math.floor(mapHeight / 2),
     vx: 0,
     vy: 0,
+    Hp: 100,
+    maxHp: 100,
     speed: 0.05, // Vitesse en cases par frame
+    sprintSpeed: 0.12, // Vitesse en sprint
+    stamina: 100,
+    maxStamina: 100,
+    staminaRegen: 0.12, // Régénération d'endurance par seconde
+    staminaRegenDelay: 1200, // délai en ms avant la regen (ex: 1.2s)
     moveUp: false,
     moveDown: false,
     moveLeft: false,
@@ -72,17 +79,19 @@ function drawMap() {
             }
         }
     }
-    document.getElementById('playerHp').textContent = "Vie : " + playerHp;
 }
 
 // --- Gestion des touches maintenues ---
 document.addEventListener('keydown', function (e) {
+    // On ne permet d'activer le sprint que si on a de l'endurance
+    if (e.key === "Shift" && player.stamina > 0) player.isSprinting = true;
     if (e.key === "z" || e.key === "Z" || e.key === "ArrowUp") player.moveUp = true;
     if (e.key === "s" || e.key === "S" || e.key === "ArrowDown") player.moveDown = true;
     if (e.key === "q" || e.key === "Q" || e.key === "ArrowLeft") player.moveLeft = true;
     if (e.key === "d" || e.key === "D" || e.key === "ArrowRight") player.moveRight = true;
 });
 document.addEventListener('keyup', function (e) {
+    if (e.key === "Shift") player.isSprinting = false;
     if (e.key === "z" || e.key === "Z" || e.key === "ArrowUp") player.moveUp = false;
     if (e.key === "s" || e.key === "S" || e.key === "ArrowDown") player.moveDown = false;
     if (e.key === "q" || e.key === "Q" || e.key === "ArrowLeft") player.moveLeft = false;
@@ -103,21 +112,40 @@ function updatePlayerMovement() {
         dy *= Math.SQRT1_2;
     }
 
-    // Collision murs (on vérifie la prochaine case)
-    let nextX = player.x + dx * player.speed;
-    let nextY = player.y + dy * player.speed;
+    // Sprint si possible
+    let moveSpeed = player.speed;
+    if (player.isSprinting && player.stamina > 0 && (dx !== 0 || dy !== 0)) {
+        moveSpeed = player.sprintSpeed;
+        player.stamina -= 0.7;
+        if (player.stamina < 0) player.stamina = 0;
+        // Reset le timer de regen à chaque frame de sprint
+        player.staminaRegenTimer = Date.now() + player.staminaRegenDelay;
+        if (player.stamina === 0) player.isSprinting = false;
+    } else {
+        // Régénération seulement si le délai est passé
+        if (player.stamina < player.maxStamina && Date.now() > player.staminaRegenTimer) {
+            player.stamina += player.staminaRegen;
+            if (player.stamina > player.maxStamina) player.stamina = player.maxStamina;
+        }
+        if (player.stamina === 0) player.isSprinting = false;
+    }
+
+    let nextX = player.x + dx * moveSpeed;
+    let nextY = player.y + dy * moveSpeed;
 
     // Collision horizontale
     if (
-        nextX >= 0 && nextX < mapWidth &&
-        gameMap[Math.floor(player.y)][Math.floor(nextX)] !== 1
+        nextX > 0 && nextX < mapWidth - 1 &&
+        gameMap[Math.floor(player.y)][Math.floor(nextX)] !== 1 &&
+        gameMap[Math.floor(player.y)][Math.ceil(nextX)] !== 1
     ) {
         player.x = nextX;
     }
     // Collision verticale
     if (
-        nextY >= 0 && nextY < mapHeight &&
-        gameMap[Math.floor(nextY)][Math.floor(player.x)] !== 1
+        nextY > 0 && nextY < mapHeight - 1 &&
+        gameMap[Math.floor(nextY)][Math.floor(player.x)] !== 1 &&
+        gameMap[Math.ceil(nextY)][Math.floor(player.x)] !== 1
     ) {
         player.y = nextY;
     }
@@ -197,8 +225,10 @@ function updateProjectiles() {
 }
 // --- Boucle d'affichage ---
 function gameLoop() {
+    updateATH();
     updatePlayerMovement();
     updateEnemies();
+    updateLoots();
     updateProjectiles();
     drawMap();
     requestAnimationFrame(gameLoop);

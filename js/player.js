@@ -94,6 +94,12 @@ function fireProjectile(e) {
 function updateATH() {
     document.getElementById('ammoDisplay').textContent = `${currentAmmo} / ${currentWeapon.magazineSize}`;
     document.getElementById('weaponImg').src = currentWeapon.image;
+
+    // Barres graphiques
+    const hpPercent = Math.max(0, Math.min(100, 100 * player.Hp / player.maxHp));
+    const staminaPercent = Math.max(0, Math.min(100, 100 * player.stamina / player.maxStamina));
+    document.getElementById('hpBar').style.width = hpPercent + "%";
+    document.getElementById('staminaBar').style.width = staminaPercent + "%";
 }
 
 function reloadWeapon() {
@@ -166,12 +172,10 @@ gameArea.addEventListener('mouseleave', function () {
     }
 });
 
-let playerHp = 10; // Exemple de points de vie
-
 function damagePlayer(amount) {
-    playerHp -= amount;
-    if (playerHp <= 0) {
-        playerHp = 0;
+    player.Hp -= amount;
+    if (player.Hp <= 0) {
+        player.Hp = 0;
         alert("Game Over !");
         // Tu peux ajouter ici une logique de reset ou de fin de partie
     }

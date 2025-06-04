@@ -29,9 +29,15 @@ const ENEMY_TYPES = {
     // Add more types as needed
 };
 
+const LOOT_IMAGES = {
+    medkit: 'assets/medkit.png',
+    ammo: 'assets/ammo.png'
+    // Ajoute d'autres types si besoin
+};
+
 // Tableau global des ennemis
 let enemies = [];
-
+let loots = [];
 // Création d'un ennemi HTML
 function spawnEnemy(x, y, typeOrOptions = "grunt") {
     let options = {};
@@ -116,7 +122,6 @@ function updateEnemies() {
         enemy.div.style.top = `${top}px`;
         enemy.div.style.width = tileSize + "px";
         enemy.div.style.height = tileSize + "px";
-        enemy.div.style.transform = 'translate(-50%, -50%)';
 
         // Affichage de la barre de vie
         enemy.div.innerHTML = `
@@ -177,8 +182,69 @@ function damageEnemy(enemy, amount) {
 }
 
 function dropLoot(enemy) {
-    const loot = enemy.lootTable[Math.floor(Math.random() * enemy.lootTable.length)];
-    console.log("Loot dropped:", loot, "at", enemy.x, enemy.y);
+    const lootType = enemy.lootTable[Math.floor(Math.random() * enemy.lootTable.length)];
+    // Position du loot = position de l'ennemi
+    const loot = {
+        x: enemy.x,
+        y: enemy.y,
+        type: lootType,
+        div: null,
+        picked: false
+    };
+
+    // Création de l'élément HTML
+    const lootDiv = document.createElement('div');
+    lootDiv.className = 'loot';
+    lootDiv.dataset.type = lootType;
+    lootDiv.style.position = 'absolute';
+    lootDiv.style.width = tileSize * 0.6 + 'px';
+    lootDiv.style.height = tileSize * 0.6 + 'px';
+    lootDiv.style.transform = 'translate(-50%, -50%)';
+    lootDiv.style.zIndex = 20;
+    lootDiv.style.background = 'none';
+
+    // Ajoute l'image correspondante
+    const img = document.createElement('img');
+    img.src = LOOT_IMAGES[lootType] || 'assets/loot_default.png';
+    img.alt = lootType;
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.pointerEvents = 'none';
+    lootDiv.appendChild(img);
+
+    loot.div = lootDiv;
+    document.getElementById('gameArea').appendChild(lootDiv);
+
+    loots.push(loot);
+}
+
+
+function updateLoots() {
+    const rect = document.getElementById('gameArea').getBoundingClientRect();
+    for (const loot of loots) {
+        if (loot.picked) continue;
+
+        // Position HTML centrée sur le joueur
+        const left = rect.width / 2 + (loot.x - player.x) * tileSize;
+        const top = rect.height / 2 + (loot.y - player.y) * tileSize;
+        loot.div.style.left = `${left}px`;
+        loot.div.style.top = `${top}px`;
+
+        // Ramassage par collision (distance < 0.6 case)
+        const dist = Math.hypot(player.x - loot.x, player.y - loot.y);
+        if (dist < 0.6) {
+            if (loot.type === 'medkit') {
+                player.hp = Math.min(player.maxHp, player.hp + 10);
+            }
+            if (loot.type === 'ammo') {
+                // Ajoute des munitions ici
+            }
+            loot.picked = true;
+            loot.div.remove();
+        }
+    }
+    // Nettoyage des loots ramassés
+    loots = loots.filter(l => !l.picked);
 }
 
 window.enemies = enemies;

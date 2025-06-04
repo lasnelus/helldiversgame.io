@@ -79,7 +79,20 @@
         <canvas id="gameCanvas"></canvas>
         <div id="cube"></div>
     </div>
-    <div id="playerHp" style="position:absolute;top:10px;left:10px;color:white;font-size:24px;">Vie : 10</div>
+    <div id="playerBars" style="position:absolute;top:10px;left:10px;z-index:100;">
+        <div style="margin-bottom:4px;">
+            <div style="color:white;font-size:14px;">Vie</div>
+            <div id="hpBarBg" style="width:160px;height:18px;background:#222;border-radius:6px;overflow:hidden;">
+                <div id="hpBar" style="height:100%;background:#e74c3c;width:100%;transition:width 0.2s;"></div>
+            </div>
+        </div>
+        <div>
+            <div style="color:white;font-size:14px;">Endurance</div>
+            <div id="staminaBarBg" style="width:160px;height:12px;background:#222;border-radius:6px;overflow:hidden;">
+                <div id="staminaBar" style="height:100%;background:#27ae60;width:100%;transition:width 0.2s;"></div>
+            </div>
+        </div>
+    </div>
     <div id="ath" style="position:fixed;bottom:20px;left:20px;color:white;font-family:sans-serif;z-index:100;">
         <img id="weaponImg" src="" alt="Weapon" style="width:48px;height:48px;vertical-align:middle;">
         <span id="ammoDisplay" style="font-size:2em;margin-left:10px;"></span>
